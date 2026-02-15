@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>SyncSpace • Discover Users</title>
+  <link rel="stylesheet" href="css/styles.css"/>
+</head>
+<body>
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="container topbar-inner">
+   <div class="brand">
+  <span class="mini" aria-hidden="true">
+    <!-- SyncSpace Icon -->
+    <svg viewBox="0 0 24 24">
+      <path d="M17.65 6.35A7.95 7.95 0 0 0 12 4V1L7 6l5 5V7a5 5 0 1 1-5 5H5a7 7 0 1 0 12.65-5.65Z"/>
+    </svg>
+  </span>
+  <span>SyncSpace</span>
+</div>
+      <div class="nav-links">
+        <a href="feed.html">
+          <svg viewBox="0 0 24 24"><path d="M12 3 3 10v11h6v-7h6v7h6V10l-9-7Z"/></svg>
+          Home
+        </a>
+        <a class="active" href="users.html">
+          <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 1 0 4.9 14.3l4.4 4.4 1.4-1.4-4.4-4.4A8 8 0 0 0 10 2Zm0 2a6 6 0 1 1 0 12 6 6 0 0 1 0-12Z"/></svg>
+          Explore
+        </a>
+        <a href="profile.html">
+          <svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5Z"/></svg>
+          Profile
+        </a>
+      </div>
+
+      <div class="user-pill">
+        <span class="avatar" id="topAvatar">U</span>
+        <span class="small" id="topUser">@user</span>
+        <button class="btn btn-ghost" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="app">
+    <div class="container app-grid">
+      <aside class="card sidebar">
+        <div class="side-title">MENU</div>
+        <a class="side-item" href="feed.html">
+          <svg viewBox="0 0 24 24"><path d="M12 3 3 10v11h6v-7h6v7h6V10l-9-7Z"/></svg>
+          Home
+        </a>
+        <a class="side-item active" href="users.html">
+          <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 1 0 4.9 14.3l4.4 4.4 1.4-1.4-4.4-4.4A8 8 0 0 0 10 2Zm0 2a6 6 0 1 1 0 12 6 6 0 0 1 0-12Z"/></svg>
+          Explore
+        </a>
+        <a class="side-item" href="profile.html">
+          <svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5Z"/></svg>
+          Profile
+        </a>
+      </aside>
+
+      <main class="card main">
+        <div class="page-title">
+          <h1>Discover Users</h1>
+          <div class="right">
+            <input class="input search" id="search" placeholder="Search users..."/>
+          </div>
+        </div>
+
+        <div class="user-list" id="list"></div>
+      </main>
+    </div>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/users.js"></script>
+  <script>
+    const me = requireLogin();
+
+    const topAvatar = document.getElementById("topAvatar");
+    const topUser = document.getElementById("topUser");
+    topUser.textContent = "@" + me.username;
+
+    function renderAvatar(el, user){
+      if (user.avatar){
+        el.innerHTML = "";
+        const img = document.createElement("img");
+        img.src = user.avatar;
+        el.appendChild(img);
+      } else {
+        el.textContent = initials(user.name);
+      }
+    }
+    renderAvatar(topAvatar, me);
+
+    const listDiv = document.getElementById("list");
+    const search = document.getElementById("search");
+
+    function render(){
+      const meNow = getSessionUser();
+      const q = search.value.trim().toLowerCase();
+      let users = listOtherUsers();
+
+      if (q){
+        users = users.filter(u =>
+          u.name.toLowerCase().includes(q) ||
+          u.username.toLowerCase().includes(q)
+        );
+      }
+
+      listDiv.innerHTML = users.map(u => {
+        const isFollowing = meNow.following.includes(u.id);
+        const avatarHTML = u.avatar
+          ? `<span class="avatar"><img src="${u.avatar}" alt=""/></span>`
+          : `<span class="avatar">${initials(u.name)}</span>`;
+
+        return `
+          <div class="card user-item">
+            <div class="user-left">
+              ${avatarHTML}
+              <div>
+                <b>${u.name}</b>
+                <div class="desc">@${u.username} • ${escapeHtml(u.bio || "")}</div>
+              </div>
+            </div>
+            <button class="btn ${isFollowing ? "btn-ghost" : ""}" onclick="follow('${u.id}')">
+              ${isFollowing ? "Following" : "Follow"}
+            </button>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function escapeHtml(str){
+      return (str || "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function follow(id){
+      toggleFollow(id);
+      render();
+    }
+
+    search.addEventListener("input", render);
+    render();
+  </script>
+</body>
+</html>

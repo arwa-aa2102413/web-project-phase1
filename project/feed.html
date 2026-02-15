@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>SyncSpace • News Feed</title>
+  <link rel="stylesheet" href="css/styles.css"/>
+</head>
+<body>
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="container topbar-inner">
+  <div class="brand">
+  <span class="mini" aria-hidden="true">
+    <!-- SyncSpace Icon -->
+    <svg viewBox="0 0 24 24">
+      <path d="M17.65 6.35A7.95 7.95 0 0 0 12 4V1L7 6l5 5V7a5 5 0 1 1-5 5H5a7 7 0 1 0 12.65-5.65Z"/>
+    </svg>
+  </span>
+  <span>SyncSpace</span>
+</div>
+      <div class="nav-links">
+        <a class="active" href="feed.html">
+          <svg viewBox="0 0 24 24"><path d="M12 3 3 10v11h6v-7h6v7h6V10l-9-7Z"/></svg>
+          Home
+        </a>
+        <a href="users.html">
+          <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 1 0 4.9 14.3l4.4 4.4 1.4-1.4-4.4-4.4A8 8 0 0 0 10 2Zm0 2a6 6 0 1 1 0 12 6 6 0 0 1 0-12Z"/></svg>
+          Explore
+        </a>
+        <a href="profile.html">
+          <svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5Z"/></svg>
+          Profile
+        </a>
+      </div>
+
+      <div class="user-pill">
+        <span class="avatar" id="topAvatar">U</span>
+        <span class="small" id="topUser">@user</span>
+        <button class="btn btn-ghost" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- App -->
+  <div class="app">
+    <div class="container app-grid">
+      <!-- Sidebar -->
+      <aside class="card sidebar">
+        <div class="side-title">MENU</div>
+        <a class="side-item active" href="feed.html">
+          <svg viewBox="0 0 24 24"><path d="M12 3 3 10v11h6v-7h6v7h6V10l-9-7Z"/></svg>
+          Home
+        </a>
+        <a class="side-item" href="users.html">
+          <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 1 0 4.9 14.3l4.4 4.4 1.4-1.4-4.4-4.4A8 8 0 0 0 10 2Zm0 2a6 6 0 1 1 0 12 6 6 0 0 1 0-12Z"/></svg>
+          Explore
+        </a>
+        <a class="side-item" href="profile.html">
+          <svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5Z"/></svg>
+          Profile
+        </a>
+        <div class="hr"></div>
+        <div class="small muted">Tip: Follow users in Explore to see their posts here.</div>
+      </aside>
+
+      <!-- Main -->
+      <main class="card main">
+        <div class="page-title">
+          <h1>News Feed</h1>
+          <div class="right small muted" id="feedHint"></div>
+        </div>
+
+        <div class="card composer">
+          <span class="avatar" id="meAvatar">U</span>
+          <textarea id="postText" placeholder="What's happening?"></textarea>
+          <button class="btn" id="postBtn">Post</button>
+        </div>
+
+        <div class="feed" id="feed"></div>
+      </main>
+    </div>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/feed.js"></script>
+  <script>
+    const me = requireLogin();
+
+    // Top user pill
+    const topAvatar = document.getElementById("topAvatar");
+    const topUser = document.getElementById("topUser");
+    const meAvatar = document.getElementById("meAvatar");
+    topUser.textContent = "@" + me.username;
+
+    function renderAvatar(el, user){
+      if (user.avatar){
+        el.innerHTML = "";
+        const img = document.createElement("img");
+        img.src = user.avatar;
+        el.appendChild(img);
+      } else {
+        el.textContent = initials(user.name);
+      }
+    }
+    renderAvatar(topAvatar, me);
+    renderAvatar(meAvatar, me);
+
+    document.getElementById("feedHint").textContent =
+      `Showing your posts + ${me.following.length} following`;
+
+    const feedDiv = document.getElementById("feed");
+
+    function render() {
+      const items = getFeedPosts();
+      const users = getUsers();
+      const meNow = getSessionUser();
+
+      feedDiv.innerHTML = items.map(p => {
+        const canDelete = p.authorId === meNow.id;
+        const author = users.find(u => u.id === p.authorId);
+        const avatarHTML = author?.avatar
+          ? `<span class="avatar"><img src="${author.avatar}" alt=""/></span>`
+          : `<span class="avatar">${initials(author?.name || "U")}</span>`;
+
+        return `
+          <div class="card post">
+            <div class="post-head">
+              <div class="post-user">
+                ${avatarHTML}
+                <div>
+                  <b>${p.authorName}</b>
+                  <div class="handle">@${p.authorUsername}</div>
+                </div>
+              </div>
+              <div class="post-time">${formatTime(p.createdAt)}</div>
+            </div>
+
+            <p>${escapeHtml(p.content)}</p>
+
+            <div class="post-actions">
+              ${canDelete ? `
+                <button class="icon-btn" onclick="handleDelete('${p.id}')">
+                  <svg viewBox="0 0 24 24"><path d="M6 7h12l-1 14H7L6 7Zm3-3h6l1 2H8l1-2Z"/></svg>
+                  Delete
+                </button>
+              ` : `<span class="small muted">You can delete only your own posts</span>`}
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function escapeHtml(str){
+      return (str || "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function handleDelete(id) {
+      try { deletePost(id); render(); }
+      catch(e){ alert(e.message); }
+    }
+
+    document.getElementById("postBtn").onclick = () => {
+      try{
+        createPost(document.getElementById("postText").value);
+        document.getElementById("postText").value = "";
+        render();
+      }catch(e){ alert(e.message); }
+    };
+
+    render();
+  </script>
+</body>
+</html>
