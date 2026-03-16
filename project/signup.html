@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>SyncSpace • Login</title>
+<title>SyncSpace • Sign Up</title>
 <link rel="stylesheet" href="css/styles.css"/>
 </head>
 
-<body>
+<body class="page-transition">
 
 <div class="auth-wrap">
 <div class="container">
@@ -20,8 +20,8 @@
 </svg>
 </div>
 
-<h1 class="auth-title">SyncSpace</h1>
-<p class="auth-sub">Sync. Share. Connect.</p>
+<h1 class="auth-title">Create Account</h1>
+<p class="auth-sub">Join SyncSpace today</p>
 
 </div>
 
@@ -30,31 +30,43 @@
 
 <div class="card auth-card">
 
-<h2>Log In</h2>
+<h2>Sign Up</h2>
 
 <div style="display:grid; gap:12px;">
 
 <div>
+<label>Name</label>
+<input class="input" id="suName" placeholder="Your name"/>
+</div>
+
+<div>
 <label>Username</label>
-<input class="input" id="loginUser" placeholder="e.g. Arwa"/>
+<input class="input" id="suUser" placeholder="Choose username"/>
 </div>
 
 <div>
 <label>Password</label>
-<input class="input" id="loginPass" type="password" placeholder="******"/>
+<input class="input" id="suPass" type="password" placeholder="Min 6 characters"/>
+</div>
+
+<div>
+<label>Confirm Password</label>
+<input class="input" id="suConfirm" type="password" placeholder="Confirm password"/>
 </div>
 
 <div class="auth-actions">
 
 <span class="small">
-New here? <a href="signup.html">Create account</a>
+Already have an account?
+<a href="index.html" id="goLogin">Log in</a>
 </span>
 
-<button class="btn" id="loginBtn">Login</button>
+<button class="btn" id="signupBtn">Create Account</button>
 
 </div>
 
 </div>
+
 </div>
 </div>
 
@@ -75,17 +87,17 @@ New here? <a href="signup.html">Create account</a>
 
 <script>
 
-if (getSessionUser())
-window.location.href = "feed.html";
-
 const $ = (id)=>document.getElementById(id);
 
-$("loginBtn").onclick = () => {
+$("signupBtn").onclick = () => {
 
 try{
-login({
-username: $("loginUser").value,
-password: $("loginPass").value
+
+signup({
+name: $("suName").value,
+username: $("suUser").value,
+password: $("suPass").value,
+confirm: $("suConfirm").value
 });
 
 window.location.href="feed.html";
